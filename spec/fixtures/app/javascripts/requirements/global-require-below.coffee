@@ -1,0 +1,3 @@
+class GlobalClassWithGlobalRequireBelow.GlobalRequireBelow
+  
+module.exports = GlobalClassWithGlobalRequireBelow.GlobalRequireBelow

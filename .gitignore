@@ -1,0 +1,34 @@
+## MAC OS
+.DS_Store
+*.gem
+## TEXTMATE
+*.tmproj
+tmtags
+
+## EMACS
+*~
+\#*
+.\#*
+
+## VIM
+*.swp
+
+## PROJECT::GENERAL
+coverage
+rdoc
+pkg
+
+## PROJECT::SPECIFIC
+
+doc
+node_modules
+spec/secrets.coffee
+inspiration.md
+favicon.png
+tmp
+tmp/*
+tmp/**/*
+spec/tmp
+spec/tmp/*
+spec/tmp/**/*
+browserify.js

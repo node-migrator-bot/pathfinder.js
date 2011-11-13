@@ -1,0 +1,2 @@
+before_script: "npm install && npm install jasmine-node coffee-script"
+script: "cake spec"
