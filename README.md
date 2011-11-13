@@ -20,7 +20,7 @@ Files referenced with the `@include` directive will be compiled into either Java
 
 For instance
 
-``` coffeescript
+``` javascript
 // @import './models'
 // @import './views'
 // @import './controllers'
@@ -30,7 +30,7 @@ alert "application"
 
 might become this CoffeeScript
 
-``` coffeescript
+``` javascript
 alert "models"
 alert "views"
 alert "controllers"
@@ -58,7 +58,7 @@ Paths work just like they do in Node.js:
 
 ### Compile
 
-``` coffeescript
+``` javascript
 Pathfinder  = require 'pathfinder'
 pathfinder  = new Pathfinder(root: process.cwd())
     
@@ -70,7 +70,7 @@ pathfinder.requirements()
 
 ### Write to file
 
-``` coffeescript
+``` javascript
 outputPath = (file) ->
   relativePath = file.relativePath()
   if relativePath.match(/^app\/javascripts\/(.*)/)
@@ -84,7 +84,7 @@ pathfinder.write outputPath: outputPath, (file, string) ->
 
 ### Find the first file from an ambiguous source
 
-``` coffeescript
+``` javascript
 file = pathfinder.find "application"
 ```
 
@@ -92,7 +92,7 @@ file = pathfinder.find "application"
 
 Pathfinder.js doesn't include a watcher, but it's setup to be easy to use with one.  It's used in Design.io for example.
 
-``` coffeescript
+``` javascript
 watch /\.(js|coffee)/
   update: (file) ->
     file.dirname()
@@ -100,7 +100,7 @@ watch /\.(js|coffee)/
 
 ### Compile `require` libraries for the browser
 
-``` coffeescript
+``` javascript
 patfinder.writeRequirements()
 ```
 

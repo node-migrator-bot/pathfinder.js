@@ -220,3 +220,9 @@ $(document).ready(function() {
       #   pathfinder.compile 
       
     waits 500
+    
+  it 'should throw helpful errors', ->
+    path = "spec/fixtures/errors/javascripts/error.coffee"
+    file = new Pathfinder.File(path)
+    
+    compiler.compile file

@@ -96,6 +96,9 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
     iterate = (engine, next) ->
       engine.render string, (error, output) ->
         string = output
+        if error
+          console.log "lineNumber: #{error.lineNumber}"
+          console.log "fileName: #{error.fileName}"
         throw new Error(error.toString() + " (#{path})") if error
         next()
     
