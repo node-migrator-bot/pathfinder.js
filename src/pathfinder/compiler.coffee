@@ -75,35 +75,6 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
     path = file.relativePath()
     
     @constructor.body(body, path)
-  
-  # Pass in path, it computes the extensions and what engine you'll want
-  enginesFor: (path) ->
-    engines     = []
-    extensions  = path.split(".")[1..-1]
-    
-    for extension in extensions
-      engine    = Shift.engine(extension)
-      engines.push engine if engine
-    
-    engines
-  
-  render: (options, callback) ->
-    self        = @
-    path        = options.path
-    string      = options.string  || File.read(path)
-    engines     = options.engines || @enginesFor(path)
-    
-    iterate = (engine, next) ->
-      engine.render string, (error, output) ->
-        string = output
-        if error
-          console.log "lineNumber: #{error.lineNumber}"
-          console.log "fileName: #{error.fileName}"
-        throw new Error(error.toString() + " (#{path})") if error
-        next()
-    
-    require('async').forEachSeries engines, iterate, ->
-      callback.call(self, string)
     
   compile: ->
     {files, options, callback} = @_args(arguments...)
@@ -118,55 +89,59 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
     terminator  = "\n"
     
     iterateFiles = (file, nextFile) ->
-      string        = file.read()
-      string        = preprocess.call(self, file, string) if preprocess
-      absolutePath  = file.absolutePath()
-      relativeRoot  = File.absolutePath(file.dirname())
-      directives    = self.directives(string)
+      try
+        string        = file.read()
+        string        = preprocess.call(self, file, string) if preprocess
+        absolutePath  = file.absolutePath()
+        relativeRoot  = File.absolutePath(file.dirname())
+        directives    = self.directives(string)
       
-      lookup.addPath(absolutePath)
-      lookup.files[absolutePath] = file
+        lookup.addPath(absolutePath)
+        lookup.files[absolutePath] = file
       
-      iterateDirectives  = (directive, nextDirective) ->
-        nestedFile = lookup.find(directive.source, relativeRoot)
+        iterateDirectives  = (directive, nextDirective) ->
+          nestedFile = lookup.find(directive.source, relativeRoot)
         
-        lookup.addDependency(absolutePath, nestedFile.absolutePath(), directive.type)
+          lookup.addDependency(absolutePath, nestedFile.absolutePath(), directive.type)
         
-        options.iterator = (nestedString, nestedFile) ->
-          directive.content = nestedString
-          iterator.call(self, nestedString, nestedFile) if iterator
+          options.iterator = (nestedString, nestedFile) ->
+            directive.content = nestedString
+            iterator.call(self, nestedString, nestedFile) if iterator
         
-        self.compile nestedFile, options, ->
-          nextDirective()
+          self.compile nestedFile, options, ->
+            nextDirective()
       
-      async.forEachSeries directives, iterateDirectives, ->
-        string = string.replace pattern, (_, directive, source) ->
-          directives.shift().content + terminator
+        async.forEachSeries directives, iterateDirectives, ->
+          string = string.replace pattern, (_, directive, source) ->
+            directives.shift().content + terminator
           
-        self.render path: file.path, string: string, (output) ->
-          string        = output
-          string        = postprocess.call(self, string, file) if postprocess
-          requirements  = self.requirements(string).strings
-          
-          iterateRequirements = (requirement, nextRequirement) ->
-            if requirement.match(/(^\.+\/)/) # "./" or "../"
-              nestedFile = lookup.find(requirement, relativeRoot)
+          Shift.render path: file.path, string: string, (error, output) ->
+            string        = output
+            string        = postprocess.call(self, string, file) if postprocess
+            requirements  = self.requirements(string).strings
+            
+            iterateRequirements = (requirement, nextRequirement) ->
+              if requirement.match(/(^\.+\/)/) # "./" or "../"
+                nestedFile = lookup.find(requirement, relativeRoot)
               
-              lookup.addDependency(absolutePath, nestedFile.absolutePath(), 'require')
+                lookup.addDependency(absolutePath, nestedFile.absolutePath(), 'require')
               
-              options.iterator = (nestedString, nestedFile) ->
-                iterator.call(self, nestedString, nestedFile) if iterator
+                options.iterator = (nestedString, nestedFile) ->
+                  iterator.call(self, nestedString, nestedFile) if iterator
               
-              self.compile nestedFile, options, ->
+                self.compile nestedFile, options, ->
+                  nextRequirement()
+              else
+                lookup.addDependency(absolutePath, requirement, 'require')
                 nextRequirement()
-            else
-              lookup.addDependency(absolutePath, requirement, 'require')
-              nextRequirement()
           
-          async.forEachSeries requirements, iterateRequirements, ->
-            string  = self.wrap(string, file) if wrap
-            iterator.call(self, string, file) if iterator
-            nextFile()
+            async.forEachSeries requirements, iterateRequirements, ->
+              string  = self.wrap(string, file) if wrap
+              iterator.call(self, string, file) if iterator
+              nextFile()
+      catch error
+        console.log error
+        nextFile()
         
     async.forEachSeries files, iterateFiles, ->
       callback.call(self) if callback
@@ -176,7 +151,7 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
     
     self        = @
     outputPath  = options.outputPath
-  
+    
     throw new Error("You must define an 'outputPath(file)' callback") unless outputPath
     
     options.iterator = (string, file) ->

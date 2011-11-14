@@ -29,7 +29,8 @@
     "mime":           ">= 1.2.4",
     "detective":      ">= 0.0.3",
     "findit":         ">= 0.1.1",
-    "mkdirp":         ">= 0.1.0"
+    "mkdirp":         ">= 0.1.0",
+    "shift":          ">= 0.1.5"
   },
   "devDependencies": {
     "coffee-script":  ">= 1.1.3",
