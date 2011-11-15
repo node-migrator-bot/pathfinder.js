@@ -18,7 +18,7 @@ describe "path", ->
     expect(@file.mtime()).toBeTruthy()
   
   it "should get the file size", ->
-    expect(@file.size()).toEqual 54
+    expect(@file.size()).toEqual 60
     
   it "should find entries in a directory", ->
     expect(Pathfinder.File.entries("spec/fixtures/app/javascripts")[1]).toEqual 'application.js'

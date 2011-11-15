@@ -42,7 +42,7 @@ var expressionRequirement = require('expression' + '-' + 'requirement');
     file = new Pathfinder.File("spec/fixtures/app/javascripts/application.js")
     path = file.absolutePath()
     
-    compiler.compile file, (directives, requirements) ->
+    compiler.compile file, ->
       expect(compiler.lookup.mapToFiles).toEqual {}
       expect(compiler.lookup.mapFromFiles[path]).toEqual { include : [  ], import : [  ], require : [  ] }
     
@@ -51,8 +51,8 @@ var expressionRequirement = require('expression' + '-' + 'requirement');
   it 'should compile file with directives and no requirements', ->
     file = new Pathfinder.File("spec/fixtures/app/javascripts/directives.js")
     path = file.absolutePath()
-
-    compiler.compile file, (result) ->
+    
+    compiler.compile file, (error, result) ->
       mapToFiles = {}
       mapToFiles["#{process.cwd()}/spec/fixtures/app/javascripts/directive_child_a.js"] =
         include:  ["#{process.cwd()}/spec/fixtures/app/javascripts/directives.js"]
@@ -149,80 +149,59 @@ var expressionRequirement = require('expression' + '-' + 'requirement');
       
     waits 500
     
-  it 'should compile entire directories', ->
-    pathfinder = new Pathfinder("#{process.cwd()}/spec/fixtures/app/javascripts")
-    
-    pathfinder.compile ->
-      requirements = [ "underscore.string",
-        "#{process.cwd()}/spec/fixtures/app/javascripts/requirements/require-below.coffee",
-        "#{process.cwd()}/spec/fixtures/app/javascripts/requirements/require-inline.coffee",
-        "#{process.cwd()}/spec/fixtures/app/javascripts/requirementChildA.js",
-        "#{process.cwd()}/spec/fixtures/app/javascripts/requirementChildB.js",
-        "underscore"
-      ]
-      
-      expect(pathfinder.lookup.requirements).toEqual requirements
-      
-    waits 500
-    
   it 'should compile javascript', ->  
-    path = "spec/fixtures/app/javascripts/directives.js"
-    file = new Pathfinder.File(path)
+    path    = "spec/fixtures/app/javascripts/directives.js"
+    file    = new Pathfinder.File(path)
+    result  = compiler.compile file
     
-    compiler.compile file, iterator: (result, file) ->
-      if file.relativePath() == path
-        expect(result).toEqual '''
-alert("child a");
-alert("child b");
+    expect(result).toEqual '''
+console.log("child a");
+console.log("child b");
 
-alert("directives");
+console.log("directives");
 
   '''
     
     waits 500
   
   it 'should compile coffeescript', ->
-    path = "spec/fixtures/app/javascripts/application.coffee"
-    file = new Pathfinder.File(path)
+    path    = "spec/fixtures/app/javascripts/application.coffee"
+    file    = new Pathfinder.File(path)
+    result  = compiler.compile file
     
-    compiler.compile file, iterator: (result, file) ->
-      if file.relativePath() == path
-        expect(result).toEqual '''
+    expect(result).toEqual '''
 
 require('underscore.string');
 
 $(document).ready(function() {
-  return alert("ready!");
+  return console.log("ready!");
 });
 
 '''
     
     waits 500
     
-  it 'should compile all', ->
-    pathfinder = new Pathfinder("#{process.cwd()}/spec/fixtures/app/javascripts")
-    
-    iterator = (file, result) ->
-    
-    pathfinder.compile iterator: iterator, wrap: true, ->
-    
-    waits 500
-    
-  it 'should write files', ->
-    pathfinder = new Pathfinder("#{process.cwd()}/spec/fixtures/app/javascripts")
-    
-    outputPath = (file) ->
-      path = file.relativePath().replace(/^spec/, "spec/tmp")
-      path.replace(/(\.(?:js|coffee)+)/g, "") + ".js"
-    
-    pathfinder.write outputPath: outputPath
-      # for requirement in pathfinder.lookup.requirements
-      #   pathfinder.compile 
-      
-    waits 500
-    
   it 'should throw helpful errors', ->
     path = "spec/fixtures/errors/javascripts/error.coffee"
     file = new Pathfinder.File(path)
     
-    compiler.compile file
+    expect(-> compiler.compile(file)).toThrow('missing ", starting on line 2, spec/fixtures/errors/javascripts/error.coffee')
+    
+  it 'should compile in on frame, not async', ->
+    path = "spec/fixtures/app/javascripts/application.coffee"
+    file = new Pathfinder.File(path)
+    
+    result = compiler.compile file
+    
+    expect(result).toEqual '''
+
+require('underscore.string');
+
+$(document).ready(function() {
+  return console.log("ready!");
+});
+
+'''
+
+  it 'should add a global extension to `require`', ->
+    require("./fixtures/app/javascripts/directives.js")

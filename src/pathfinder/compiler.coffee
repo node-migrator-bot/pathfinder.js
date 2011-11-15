@@ -7,9 +7,9 @@ Shift     = require 'shift'
 class Compiler
   @body: (body, filename) ->
     """
-require.define(#{filename}, function (require, module, exports, __dirname, __filename) {
+require.define({"#{filename}": function (require, module, exports, __dirname, __filename) {
   #{body}
-});
+}});
     """
   
   @package: (body, filename) ->
@@ -77,88 +77,74 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
     @constructor.body(body, path)
     
   compile: ->
-    {files, options, callback} = @_args(arguments...)
+    {file, options, callback} = @_args(arguments...)
     self        = @
     lookup      = @lookup
     pattern     = @constructor.DIRECTIVE_PATTERN
     wrap        = options.wrap == true
     recursive   = if options.hasOwnProperty("recursive") then options.recursive else true
+    _require    = if options.hasOwnProperty("require") then options.require else true
     preprocess  = options.preprocess
     postprocess = options.postprocess
     iterator    = options.iterator
     terminator  = "\n"
+    result      = null
     
-    iterateFiles = (file, nextFile) ->
-      try
-        string        = file.read()
-        string        = preprocess.call(self, file, string) if preprocess
-        absolutePath  = file.absolutePath()
-        relativeRoot  = File.absolutePath(file.dirname())
-        directives    = self.directives(string)
+    try
+      string        = file.read()
+      string        = preprocess.call(self, file, string) if preprocess
+      absolutePath  = file.absolutePath()
+      relativeRoot  = File.absolutePath(file.dirname())
+      directives    = self.directives(string)
       
-        lookup.addPath(absolutePath)
-        lookup.files[absolutePath] = file
+      lookup.addPath(absolutePath)
+    
+      iterateDirectives  = (directive, nextDirective) ->
+        nestedFile = lookup.find(directive.source, relativeRoot)
+        
+        lookup.addDependency(absolutePath, nestedFile.absolutePath(), directive.type)
+        
+        self.compile nestedFile, options, (error, nestedString) ->
+          directive.content = nestedString
+          iterator.call(self, nestedString, nestedFile) if iterator
+          nextDirective()
       
-        iterateDirectives  = (directive, nextDirective) ->
-          nestedFile = lookup.find(directive.source, relativeRoot)
+      async.forEachSeries directives, iterateDirectives, ->
+        string = string.replace pattern, (_, directive, source) ->
+          directives.shift().content + terminator
         
-          lookup.addDependency(absolutePath, nestedFile.absolutePath(), directive.type)
-        
-          options.iterator = (nestedString, nestedFile) ->
-            directive.content = nestedString
-            iterator.call(self, nestedString, nestedFile) if iterator
-        
-          self.compile nestedFile, options, ->
-            nextDirective()
-      
-        async.forEachSeries directives, iterateDirectives, ->
-          string = string.replace pattern, (_, directive, source) ->
-            directives.shift().content + terminator
-          
-          Shift.render path: file.path, string: string, (error, output) ->
-            string        = output
-            string        = postprocess.call(self, string, file) if postprocess
+        Shift.render path: file.path, string: string, (error, output) ->
+          string        = output
+          string        = postprocess.call(self, string, file) if postprocess
+          if _require
             requirements  = self.requirements(string).strings
-            
-            iterateRequirements = (requirement, nextRequirement) ->
-              if requirement.match(/(^\.+\/)/) # "./" or "../"
-                nestedFile = lookup.find(requirement, relativeRoot)
-              
-                lookup.addDependency(absolutePath, nestedFile.absolutePath(), 'require')
-              
-                options.iterator = (nestedString, nestedFile) ->
-                  iterator.call(self, nestedString, nestedFile) if iterator
-              
-                self.compile nestedFile, options, ->
-                  nextRequirement()
-              else
-                lookup.addDependency(absolutePath, requirement, 'require')
-                nextRequirement()
+          else
+            requirements  = []
           
-            async.forEachSeries requirements, iterateRequirements, ->
-              string  = self.wrap(string, file) if wrap
-              iterator.call(self, string, file) if iterator
-              nextFile()
-      catch error
-        console.log error
-        nextFile()
-        
-    async.forEachSeries files, iterateFiles, ->
-      callback.call(self) if callback
+          iterateRequirements = (requirement, nextRequirement) ->
+            if requirement.match(/(^\.+\/)/) # "./" or "../"
+              nestedFile = lookup.find(requirement, relativeRoot)
+            
+              lookup.addDependency(absolutePath, nestedFile.absolutePath(), 'require')
+              
+              self.compile nestedFile, options, (error, nestedString) ->
+                iterator.call(self, nestedString, nestedFile) if iterator
+                nextRequirement()
+            else
+              lookup.addDependency(absolutePath, requirement, 'require')
+              nextRequirement()
+          
+          async.forEachSeries requirements, iterateRequirements, ->
+            string  = self.wrap(string, file) if wrap
+            result  = string
+            callback.call(self, null, string) if callback
+    catch error
+      if callback
+        callback.call(self, error, null)
+      else
+        throw error
       
-  write: ->
-    {files, options, callback} = @_args(arguments...)
-    
-    self        = @
-    outputPath  = options.outputPath
-    
-    throw new Error("You must define an 'outputPath(file)' callback") unless outputPath
-    
-    options.iterator = (string, file) ->
-      File.write outputPath.call(self, file), string
-    
-    @compile files, options, ->
-      callback.call(self) if callback
+    result
       
   _args: ->
     args      = Array.prototype.slice.call(arguments, 0, arguments.length)
@@ -171,15 +157,10 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
     else
       options = {}
     
-    files = options.files || args.shift() || File.files(@lookup.root)
-    files = [files] unless files instanceof Array
-    delete options.files
+    file = args.shift()
+    file = new File(file) if typeof file == "string"
     
-    for file, i in files
-      if typeof file == "string"
-        files[i] = @lookup[File.absolutePath(file)] || new File(file)
-    
-    files: files, options: options, callback: callback
+    file: file, options: options, callback: callback
     
   _extend: (to, from) ->
     for key, value of from

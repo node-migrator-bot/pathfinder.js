@@ -8,7 +8,6 @@ class Lookup
     @mapToFiles           = {}
     @mapFromFiles         = {}
     @requirements         = []
-    @files                = {}
     
   # find "application", ["./app/assets"]
   # 

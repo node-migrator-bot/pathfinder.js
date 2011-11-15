@@ -1,10 +1,4 @@
-# MUST be added after coffeescript
-# if require.extensions
-#   require.extensions['.coffee'] = (module, filename) ->
-#     content = compile fs.readFileSync(filename, 'utf8'), {filename}
-#     module._compile content, filename
-# else if require.registerExtension
-#   require.registerExtension '.coffee', (content) -> compile content
+require('coffee-script')
 
 class Pathfinder
   @Compiler: require './pathfinder/compiler'
@@ -19,13 +13,28 @@ class Pathfinder
   compile: ->
     @compiler.compile(arguments...)
     
-  write: ->
-    @compiler.write(arguments...)
-    
   requirements: ->
     @lookup.requirements
     
   find: (source, relativeRoot) ->
     @lookup.find(source, relativeRoot)
+    
+  paths: ->
   
+  bootstrap: ->
+    
+  @instance: ->
+    @_instance ||= new Pathfinder
+
 module.exports = Pathfinder
+
+# MUST be added after coffeescript
+#if require.extensions
+#  require.extensions['.coffee'] = (module, filename) ->
+#    content = Pathfinder.instance().compile(filename, require: false)
+#    module._compile content, filename
+#  require.extensions['.js'] = (module, filename) ->
+#    content = Pathfinder.instance().compile(filename, require: false)
+#    module._compile content, filename
+#else if require.registerExtension
+#  console.log "pathfinder doesn't support this version of node.js, try >= 0.4.0"

@@ -1,4 +1,4 @@
 require 'underscore.string'
 
 $(document).ready ->
-  alert("ready!")
+  console.log("ready!")

@@ -1,6 +1,6 @@
 {
   "name": "pathfinder",
-  "version": "0.0.1",
+  "version": "0.1.5",
   "description": "Asset API for Node.js",
   "homepage": "http://github.com/viatropos/pathfinder.js",
   "main": "lib/pathfinder.js",
@@ -30,7 +30,7 @@
     "detective":      ">= 0.0.3",
     "findit":         ">= 0.1.1",
     "mkdirp":         ">= 0.1.0",
-    "shift":          ">= 0.1.5"
+    "shift":          ">= 0.1.8"
   },
   "devDependencies": {
     "coffee-script":  ">= 1.1.3",

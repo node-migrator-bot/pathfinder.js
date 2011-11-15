@@ -8,6 +8,14 @@
 npm install pathfinder
 ```
 
+## Goals
+
+- make it so any node.js code works in the browser
+- make it easy to piece together code from modules without `require` (copy the code from one place to another)
+- compile out asset digests
+- make it easy to wrap any code in `require` for the browser.
+- be a foundation for any rich watching functionality
+
 ## API
 
 ### Directives

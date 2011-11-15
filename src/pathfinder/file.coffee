@@ -119,6 +119,12 @@ class File
       console.error(error) if error
       fs.writeFileSync(path, data)
       callback() if callback
+      
+  @mkdir: (path, callback) ->
+    mkdirp dirname, 0755, (error) ->
+      console.error(error) if error
+      fs.writeFileSync(path, data)
+      callback() if callback
   
   # http://stackoverflow.com/questions/4568689/how-do-i-move-file-a-to-a-different-partition-in-node-js  
   # https://gist.github.com/992478

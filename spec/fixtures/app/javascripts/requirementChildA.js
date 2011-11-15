@@ -1,1 +1,1 @@
-alert("child a");
+console.log("child a");
