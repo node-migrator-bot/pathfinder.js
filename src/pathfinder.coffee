@@ -16,6 +16,12 @@ class Pathfinder
   requirements: ->
     @lookup.requirements
     
+  directories: ->
+    []
+    
+  dependsOn: (path) ->
+    @lookup.dependsOn(path)
+    
   find: (source, relativeRoot) ->
     @lookup.find(source, relativeRoot)
     

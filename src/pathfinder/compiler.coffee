@@ -59,14 +59,14 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
   # 
   # Any file that is included can be optionally left in an external file.  Useful for production vs. development renderings.
   #
-  @DIRECTIVE_PATTERN: /(?:\/\/|#| *)\s*@(include|import)\s*['"]?([^'"]+)['"]?[\s]*?\n?/g
+  @DIRECTIVE_PATTERN: /(\ *)(?:\/\/|#| *)\s*@(include|import)\s*['"]?([^'"]+)['"]?[\s]*?\n?/g
     
   requirements: (string) ->
     detective.find(string)
   
   directives: (string, callback) ->
     result = []
-    string.replace @constructor.DIRECTIVE_PATTERN, (_, directive, source) ->
+    string.replace @constructor.DIRECTIVE_PATTERN, (_, tabs, directive, source) ->
       result.push type: directive, source: source
       _
     result
@@ -110,8 +110,11 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
           nextDirective()
       
       async.forEachSeries directives, iterateDirectives, ->
-        string = string.replace pattern, (_, directive, source) ->
-          directives.shift().content + terminator
+        string = string.replace pattern, (_, tabs, directive, source) ->
+          lines       = directives.shift().content.split("\n")
+          for line, i in lines
+            lines[i]  = tabs + line
+          lines.join("\n") + terminator
         
         Shift.render path: file.path, string: string, (error, output) ->
           string        = output
@@ -124,7 +127,7 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
           iterateRequirements = (requirement, nextRequirement) ->
             if requirement.match(/(^\.+\/)/) # "./" or "../"
               nestedFile = lookup.find(requirement, relativeRoot)
-            
+              
               lookup.addDependency(absolutePath, nestedFile.absolutePath(), 'require')
               
               self.compile nestedFile, options, (error, nestedString) ->
@@ -137,10 +140,10 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
           async.forEachSeries requirements, iterateRequirements, ->
             string  = self.wrap(string, file) if wrap
             result  = string
-            callback.call(self, null, string) if callback
+            callback.call(self, null, string, file) if callback
     catch error
       if callback
-        callback.call(self, error, null)
+        callback.call(self, error, null, file)
       else
         throw error
       

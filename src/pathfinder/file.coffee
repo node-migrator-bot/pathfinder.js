@@ -4,6 +4,7 @@ mime    = require('mime')
 _path   = require('path')
 util    = require('util')
 mkdirp  = require('mkdirp')
+exec    = require('child_process').exec
 
 class File
   @stat: (path) ->
@@ -207,6 +208,22 @@ class File
     
   dirname: ->
     @constructor.dirname(@path)
+    
+  @touch: (path, callback) ->
+    self  = @
+    exec "touch -m #{path}", (error) ->
+      if callback
+        callback.call(self, error)
+      else
+        throw error if error
+    
+  touch: (callback) ->
+    self  = @
+    @constructor.touch @path, (error) ->
+      if callback
+        callback.call(self, error)
+      else
+        throw error if error
   
   # Return logical path with digest spliced in.
   # 
@@ -231,5 +248,8 @@ class File
   # 
   pathWithFingerprint: (digest) ->
     @constructor.pathWithFingerprint(@path, digest)
+    
+  write: (data, callback) ->
+    @constructor.write(@path, data, callback)
 
 module.exports = File

@@ -62,6 +62,15 @@ class Lookup
     
     @
     
+  dependsOn: (path) ->
+    result  = []
+    map     = @mapToFiles[path]
+    return result unless map
+    result  = result.concat map.include
+    for item in map.import
+      result.push item unless result.indexOf(item) > -1
+    result
+    
   # RegExp.escape
   escape: (string) ->
     string.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")

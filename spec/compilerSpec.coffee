@@ -205,3 +205,22 @@ $(document).ready(function() {
 
   it 'should add a global extension to `require`', ->
     require("./fixtures/app/javascripts/directives.js")
+    
+  it 'should list dependencies', ->
+    compiler.compile "spec/fixtures/app/javascripts/directives.js"
+    
+    result  = compiler.lookup.dependsOn("#{process.cwd()}/spec/fixtures/app/javascripts/directive_child_a.js")
+    
+    expect(result).toEqual ['/Users/viatropos/Documents/git/personal/plugins/pathfinder.js/spec/fixtures/app/javascripts/directives.js']
+    
+    file    = new Pathfinder.File("spec/fixtures/app/javascripts/directives.js")
+    
+    file.touch()
+    before  = file.mtime()
+    
+    waits 3
+    
+    file.touch()
+    after   = file.mtime()
+    
+    expect(before.getTime() < after.getTime()).toBeTruthy()
