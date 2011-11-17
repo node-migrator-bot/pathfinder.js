@@ -218,7 +218,7 @@ $(document).ready(function() {
     file.touch()
     before  = file.mtime()
     
-    waits 3
+    waits 100
     
     file.touch()
     after   = file.mtime()

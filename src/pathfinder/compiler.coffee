@@ -59,8 +59,8 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
   # 
   # Any file that is included can be optionally left in an external file.  Useful for production vs. development renderings.
   #
-  @DIRECTIVE_PATTERN: /(\ *)(?:\/\/|#| *)\s*@(include|import)\s*['"]?([^'"]+)['"]?[\s]*?\n?/g
-    
+  @DIRECTIVE_PATTERN: /(\ *)(?:\/\/|#) @(include|import) *['"]([^'"]+)['"][\ ]*?\n?/g
+  
   requirements: (string) ->
     detective.find(string)
   
@@ -83,12 +83,14 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
     pattern     = @constructor.DIRECTIVE_PATTERN
     wrap        = options.wrap == true
     recursive   = if options.hasOwnProperty("recursive") then options.recursive else true
-    _require    = if options.hasOwnProperty("require") then options.require else true
+    _require    = if options.hasOwnProperty("require") then options.require else false
     preprocess  = options.preprocess
     postprocess = options.postprocess
     iterator    = options.iterator
     terminator  = "\n"
     result      = null
+    template    = options.template != false
+    renderOptions = options.renderOptions || {}      
     
     try
       string        = file.read()
@@ -102,12 +104,20 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
       iterateDirectives  = (directive, nextDirective) ->
         nestedFile = lookup.find(directive.source, relativeRoot)
         
+        unless nestedFile
+          return callback.call(self, new Error("Cannot find #{directive.type} ed file: ##{directive.source} in #{file.path}"), string, file)
+        
         lookup.addDependency(absolutePath, nestedFile.absolutePath(), directive.type)
         
+        options.template = directive.type == "include"
+        
         self.compile nestedFile, options, (error, nestedString) ->
+          return callback.call(self, error, null, file) if error
           directive.content = nestedString
           iterator.call(self, nestedString, nestedFile) if iterator
           nextDirective()
+          
+        options.template = template
       
       async.forEachSeries directives, iterateDirectives, ->
         string = string.replace pattern, (_, tabs, directive, source) ->
@@ -116,10 +126,10 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
             lines[i]  = tabs + line
           lines.join("\n") + terminator
         
-        Shift.render path: file.path, string: string, (error, output) ->
+        process = (output) ->
           string        = output
           string        = postprocess.call(self, string, file) if postprocess
-          if _require
+          if _require && template
             requirements  = self.requirements(string).strings
           else
             requirements  = []
@@ -141,6 +151,17 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
             string  = self.wrap(string, file) if wrap
             result  = string
             callback.call(self, null, string, file) if callback
+        
+        if template
+          _renderOptions = {path: file.path, string: string}
+          for key, value of renderOptions
+            _renderOptions[key] = value
+          Shift.render _renderOptions, (error, output) ->
+            return callback.call(self, error, null, file) if error
+            process(output)
+        else
+          process(string)
+            
     catch error
       if callback
         callback.call(self, error, null, file)

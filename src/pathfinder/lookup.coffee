@@ -13,7 +13,10 @@ class Lookup
   # 
   # use this method to find the string for a helper method, not to find the actual file
   find: (source, relativeRoot = @root) ->
-    source    = File.absolutePath(source, relativeRoot)
+    if source[0] == "/"
+      source  = File.join(@root, source)
+    else
+      source    = File.absolutePath(source, relativeRoot)
     directory = File.dirname(source)
     basename  = File.basename(source)
     path = @matches(directory, basename)[0]

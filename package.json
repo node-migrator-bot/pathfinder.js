@@ -1,6 +1,6 @@
 {
   "name": "pathfinder",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "Asset API for Node.js",
   "homepage": "http://github.com/viatropos/pathfinder.js",
   "main": "lib/pathfinder.js",

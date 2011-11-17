@@ -85,6 +85,9 @@ class File
         result = result.concat require('findit').sync(path)
     result
     
+  @remove: (path) ->
+    fs.unlinkSync(path)
+    
   @files: ->
     paths   = @glob(arguments...)
     result  = []
@@ -98,7 +101,7 @@ class File
     result  = []
     self    = @
     for path in paths
-      result.push(path) if self.isDirectory(path)
+      result.push(path) if self.isDirectory(path) && !(path == "." || path == "..")
     result
     
   @entries: (path) ->
@@ -118,14 +121,27 @@ class File
     
     mkdirp dirname, 0755, (error) ->
       console.error(error) if error
-      fs.writeFileSync(path, data)
-      callback() if callback
+      fs.writeFile(path, data, callback)
+    
+  @writeSync: (path, data) ->
+    dirname = @dirname(path)
+    
+    @mkdirpSync dirname
+    fs.writeFileSync(path, data)
       
-  @mkdir: (path, callback) ->
-    mkdirp dirname, 0755, (error) ->
-      console.error(error) if error
-      fs.writeFileSync(path, data)
-      callback() if callback
+  @mkdirpSync: (dir) ->
+    dir = _path.resolve(_path.normalize(dir))
+    try
+      fs.mkdirSync(dir, 0755)
+    catch e
+      switch e.errno
+        when 47
+          break
+        when 34
+          mkdirpSync _path.dirname(dir)
+          return mkdirpSync(dir)
+        else
+          console.error(e)
   
   # http://stackoverflow.com/questions/4568689/how-do-i-move-file-a-to-a-different-partition-in-node-js  
   # https://gist.github.com/992478
