@@ -2,9 +2,9 @@ Pathfinder = require '../lib/pathfinder'
 
 # describe "lookup", ->
 #   beforeEach ->
-#     # Pathfinder.Path.glob("spec/fixtures/app/javascripts")
+#     # Pathfinder.Path.glob("test/fixtures/app/javascripts")
 #     @lookup = new Pathfinder.Lookup
-#       paths:      ["spec/fixtures/app/javascripts"]
+#       paths:      ["test/fixtures/app/javascripts"]
 #       extensions: ["js", "coffee"]
 #       aliases:
 #         js:       ["coffee", "coffeescript"]

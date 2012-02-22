@@ -39,7 +39,7 @@ class File
   @size: (path) ->
     @stat(path).size
     
-  @expandFile: (path) ->
+  @expandPath: (path) ->
     _path.normalize(path)
     
   @absolutePath: (path, root = @pwd()) ->
@@ -128,7 +128,7 @@ class File
     
     @mkdirpSync dirname
     fs.writeFileSync(path, data)
-      
+    
   @mkdirpSync: (dir) ->
     dir = _path.resolve(_path.normalize(dir))
     try
@@ -226,18 +226,16 @@ class File
     @constructor.dirname(@path)
     
   @touch: (path, callback) ->
-    self  = @
-    exec "touch -m #{path}", (error) ->
+    exec "touch -m #{path.replace(/\ /, "\\ ")}", (error) =>
       if callback
-        callback.call(self, error)
+        callback.call(@, error)
       else
         throw error if error
     
   touch: (callback) ->
-    self  = @
-    @constructor.touch @path, (error) ->
+    @constructor.touch @path, (error) =>
       if callback
-        callback.call(self, error)
+        callback.call(@, error)
       else
         throw error if error
   

@@ -135,7 +135,7 @@ require.define(#{filename}, function (require, module, exports, __dirname, __fil
             requirements  = []
           
           iterateRequirements = (requirement, nextRequirement) ->
-            if requirement.match(/(^\.+\/)/) # "./" or "../"
+            if requirement.match(/^(\.+\/)/) # "./" or "../"
               nestedFile = lookup.find(requirement, relativeRoot)
               
               lookup.addDependency(absolutePath, nestedFile.absolutePath(), 'require')
